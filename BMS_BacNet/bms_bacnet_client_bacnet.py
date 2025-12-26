@@ -33,8 +33,8 @@ def load_client_config(path: str = "client.config") -> Dict[str, str]:
 
     Returns a dict of lowercased keys to string values. Missing file returns {}.
     Supported keys (case-insensitive):
-      db_type, database, table, db_host, bacnet_server, poll_interval,
-      debuglevel, local_device_id, local_address
+      db_type, database, table, db_host, db_username, db_password, bacnet_server,
+      poll_interval, debuglevel, local_device_id, local_address
     """
     cfg: Dict[str, str] = {}
     try:
@@ -77,10 +77,10 @@ class DBHandler:
           "database": "bms_bacnet.db",     # sqlite file or database name
           "table": "bms_readings",
           # postgres-only fields:
-          "host": "localhost",
+          "db_host": "localhost",           # or "host"
           "port": 5432,
-          "user": "user",
-          "password": "pass",
+          "db_username": "user",            # or "user"
+          "db_password": "pass",            # or "password"
       }
     """
 
@@ -99,12 +99,18 @@ class DBHandler:
                 import psycopg2
             except Exception:
                 raise ImportError("psycopg2 is required for Postgres support")
+            # Support both naming conventions: (db_username/db_password) and (user/password)
+            username = self.config.get("db_username") or self.config.get("user")
+            password = self.config.get("db_password") or self.config.get("password")
+            host = self.config.get("db_host") or self.config.get("host", "localhost")
+            port = self.config.get("port", 5432)
+            
             self.conn = psycopg2.connect(
                 dbname=self.config.get("database"),
-                user=self.config.get("user"),
-                password=self.config.get("password"),
-                host=self.config.get("host", "localhost"),
-                port=self.config.get("port", 5432),
+                user=username,
+                password=password,
+                host=host,
+                port=port,
             )
         else:
             raise ValueError(f"Unsupported db_type: {self.db_type}")
@@ -455,8 +461,28 @@ if __name__ == "__main__":
 
     local_dev_id = int(cfg.get('local_device_id', '999'))
     local_address = cfg.get('local_address', '0.0.0.0:47809')
+    
+    # Prepare database configuration from loaded config
+    db_config = {
+        "db_type": cfg.get('db_type', 'sqlite'),
+        "database": cfg.get('database', 'bms_bacnet.db'),
+        "table": cfg.get('table', 'bms_readings'),
+    }
+    # Add optional database credentials if configured
+    if cfg.get('db_host'):
+        db_config['db_host'] = cfg.get('db_host')
+    if cfg.get('db_username'):
+        db_config['db_username'] = cfg.get('db_username')
+    if cfg.get('db_password'):
+        db_config['db_password'] = cfg.get('db_password')
+    if cfg.get('port'):
+        try:
+            db_config['port'] = int(cfg.get('port'))
+        except Exception:
+            pass
+    
     client = BACnetBMSClient(local_device_id=local_dev_id, local_address=local_address,
-                              db_config=None)
+                              db_config=db_config)
 
     def read_all_sensors(client_obj, target=None):
         if target is None:
