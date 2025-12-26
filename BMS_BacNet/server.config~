@@ -1,6 +1,0 @@
-# Simple server config (key=value)
-Port=47808
-DebugLevel=DEBUG
-VendorName=AcmeBMS
-VendorIdentifier=1234
-ModelName=Acme BACnet Server v1
