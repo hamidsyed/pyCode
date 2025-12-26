@@ -1,0 +1,9 @@
+# BACnet-specific dependencies
+# Recommended: run in a Python 3.11 virtual environment
+
+bacpypes
+
+# Optional: pin a known working version if you want reproducible installs,
+# but check the project page for the best version for your Python runtime.
+# Example (may change over time):
+# bacpypes==0.23
