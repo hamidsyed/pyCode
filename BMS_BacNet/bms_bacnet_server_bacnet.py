@@ -51,6 +51,14 @@ class BACnetBMSServer:
     This class is intentionally minimal: it maps each numeric sensor to an
     `AnalogValue` object and updates the object's `presentValue` from the
     provided `device.get_sensor_data()` results.
+    
+    Exposes 6 sensors as BACnet AnalogValue objects:
+    1. Total Electricity Energy (kWh)
+    2. Outdoor Air Temperature (°C)
+    3. Outdoor Air Humidity (%)
+    4. Wind Speed (m/s)
+    5. Diffuse Solar Radiation (W/m²)
+    6. Direct Solar Radiation (W/m²)
 
     The server runs bacpypes `run()` in a background thread so the main
     program can continue. If `bacpypes` is not installed an informative
@@ -185,16 +193,17 @@ class BACnetBMSServer:
         log.info(f"BACnet application initialized on {self.address}")
 
     def _add_sensors_as_objects(self):
-        """Create 5 BMS sensor objects as AnalogValue instances in the BACnet device.
+        """Create 6 BMS sensor objects as AnalogValue instances in the BACnet device.
         MUST be called before bacpypes core starts."""
         try:
             # Sensor definitions: (instance, name, unit)
             sensors = [
-                (1, "Temperature", "degreesCelsius"),
-                (2, "Humidity", "percentRelativeHumidity"),
-                (3, "Pressure", "pascals"),
-                (4, "CO2_Level", "partsPerMillion"),
-                (5, "Occupancy", "people"),
+                (1, "Total_Electricity_Energy", "kilowattHours"),
+                (2, "Outdoor_Air_Temperature", "degreesCelsius"),
+                (3, "Outdoor_Air_Humidity", "percentRelativeHumidity"),
+                (4, "Wind_Speed", "metersPerSecond"),
+                (5, "Diffuse_Solar_Radiation", "wattsPerSquareMeter"),
+                (6, "Direct_Solar_Radiation", "wattsPerSquareMeter"),
             ]
             
             for instance, name, unit in sensors:
@@ -227,11 +236,12 @@ class BACnetBMSServer:
                 if sensor_data:
                     # Update stored sensor objects with latest values
                     sensor_map = {
-                        'Temperature': sensor_data.get('temperature', 0.0),
-                        'Humidity': sensor_data.get('humidity', 0.0),
-                        'Pressure': sensor_data.get('pressure', 0.0),
-                        'CO2_Level': sensor_data.get('co2_level', 0.0),
-                        'Occupancy': sensor_data.get('occupancy', 0.0),
+                        'Total_Electricity_Energy': sensor_data.get('electricity_energy', 0.0),
+                        'Outdoor_Air_Temperature': sensor_data.get('outdoor_temp', 0.0),
+                        'Outdoor_Air_Humidity': sensor_data.get('outdoor_humidity', 0.0),
+                        'Wind_Speed': sensor_data.get('wind_speed', 0.0),
+                        'Diffuse_Solar_Radiation': sensor_data.get('diffuse_solar', 0.0),
+                        'Direct_Solar_Radiation': sensor_data.get('direct_solar', 0.0),
                     }
                     
                     for name, value in sensor_map.items():

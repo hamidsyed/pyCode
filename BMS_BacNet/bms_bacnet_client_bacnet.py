@@ -438,10 +438,10 @@ class BACnetBMSClient:
 
 
 if __name__ == "__main__":
-    """Standalone client: poll all 5 BMS sensors and print to stdout.
+    """Standalone client: poll all 6 BMS sensors and print to stdout.
 
     Runs indefinitely until interrupted (Ctrl-C). Reads all analogValue
-    instances (1..5) from `127.0.0.1:47808` and prints a single-line sensor
+    instances (1..6) from `127.0.0.1:47808` and prints a single-line sensor
     summary each second similar to the server output.
     """
     # load client config and apply settings
@@ -489,15 +489,17 @@ if __name__ == "__main__":
             target = cfg.get('bacnet_server', '127.0.0.1:47808')
         """Read all configured analogValue sensors and return a dict.
 
-        Returns dict with keys: Temperature, Humidity, Pressure, CO2_Level, Occupancy
+        Returns dict with keys: Total_Electricity_Energy, Outdoor_Air_Temperature, 
+        Outdoor_Air_Humidity, Wind_Speed, Diffuse_Solar_Radiation, Direct_Solar_Radiation
         Values are numeric or None on failure.
         """
         mapping = [
-            (1, 'Temperature'),
-            (2, 'Humidity'),
-            (3, 'Pressure'),
-            (4, 'CO2_Level'),
-            (5, 'Occupancy'),
+            (1, 'Total_Electricity_Energy'),
+            (2, 'Outdoor_Air_Temperature'),
+            (3, 'Outdoor_Air_Humidity'),
+            (4, 'Wind_Speed'),
+            (5, 'Diffuse_Solar_Radiation'),
+            (6, 'Direct_Solar_Radiation'),
         ]
         results = {}
         for instance, name in mapping:
@@ -518,23 +520,23 @@ if __name__ == "__main__":
             now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
             # Prepare formatted output, using sensible units
-            t = readings.get('Temperature')
-            h = readings.get('Humidity')
-            p = readings.get('Pressure')
-            c = readings.get('CO2_Level')
-            o = readings.get('Occupancy')
+            e = readings.get('Total_Electricity_Energy')
+            t = readings.get('Outdoor_Air_Temperature')
+            h = readings.get('Outdoor_Air_Humidity')
+            w = readings.get('Wind_Speed')
+            ds = readings.get('Diffuse_Solar_Radiation')
+            dr = readings.get('Direct_Solar_Radiation')
 
-            def fmt_num(x, digs=2):
+            def fmt_num(x, digs=1):
                 return f"{x:.{digs}f}" if (x is not None) else "N/A"
 
-            occ_str = str(int(o)) if (o is not None) else "N/A"
-
             line = (
-                f"[{now}] [SENSOR] Temp:  {fmt_num(t)}°C | "
-                f"Humidity:  {fmt_num(h)}% | "
-                f"Pressure: {fmt_num(p)}hPa | "
-                f"CO2:   {fmt_num(c)}ppm | "
-                f"Occupancy:  {occ_str}"
+                f"[{now}] [SENSOR] Energy: {fmt_num(e, 2)}kWh | "
+                f"OutTemp: {fmt_num(t)}°C | "
+                f"OutHum: {fmt_num(h)}% | "
+                f"Wind: {fmt_num(w)}m/s | "
+                f"DiffSolar: {fmt_num(ds, 1)}W/m² | "
+                f"DirSolar: {fmt_num(dr, 1)}W/m²"
             )
             print(line)
 

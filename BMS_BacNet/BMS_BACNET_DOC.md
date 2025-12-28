@@ -15,6 +15,8 @@ This document provides:
 - Database storage behavior used by the client
 - Troubleshooting and best practices
 
+The BMS simulator exposes 6 environmental and energy sensors via BACnet protocol.
+
 Recommended Python runtime
 --------------------------
 - Recommended: Python 3.11 (bacpypes compatibility tested up to 3.11). Python 3.12 may not be supported by some bacpypes releases due to removal of `asyncore` and other changes.
@@ -25,7 +27,7 @@ Files described
 
 Purpose
 - Expose the simulated BMS device sensor values as BACnet objects via `bacpypes`.
-- Maps each sensor to an `AnalogValueObject` (temperature, humidity, pressure, CO2, occupancy).
+- Maps each sensor to an `AnalogValueObject` with appropriate BACnet engineering units.
 - Updates each object's `presentValue` from the running BMS simulator (`BMSDevice.get_sensor_data()`).
 
 Key classes/usage
@@ -35,12 +37,13 @@ Key classes/usage
 
 Important details
 - Requires `bacpypes` installed and a compatible Python version (3.11 recommended).
-- The server registers 5 analogValue objects with instance numbers 1-5 mapping to sensors:
-  - 1: temperature
-  - 2: humidity
-  - 3: pressure
-  - 4: co2_level
-  - 5: occupancy
+- The server registers 6 analogValue objects with instance numbers 1-6 mapping to sensors:
+  - 1: Total Electricity Energy (kWh) - range 0-600
+  - 2: Outdoor Air Drybulb Temperature (°C) - range 5-44
+  - 3: Outdoor Air Relative Humidity (%) - range 11-100
+  - 4: Wind Speed (m/s) - range 0-9.3
+  - 5: Diffuse Solar Radiation (W/m²) - range 0-444
+  - 6: Direct Solar Radiation (W/m²) - range 0-924
 - The analog object `presentValue` is updated every `poll_interval` seconds by reading `device.get_sensor_data()`.
 
 2) `bms_bacnet_client_bacnet.py` — BACnet client
@@ -70,8 +73,12 @@ from bms_bacnet_client_bacnet import BACnetBMSClient
 
 client = BACnetBMSClient()
 client.start()
+# Read Total Electricity Energy (instance 1)
 val = client.read_analog('127.0.0.1/47808', 'analogValue', 1)
-print('Read result:', val)
+print('Total Electricity Energy:', val, 'kWh')
+# Read Outdoor Air Temperature (instance 2)
+temp = client.read_analog('127.0.0.1/47808', 'analogValue', 2)
+print('Outdoor Temperature:', temp, '°C')
 client.stop()
 ```
 
@@ -93,7 +100,7 @@ client = BACnetBMSClient(db_config=db_cfg)
 3) `bms_bacnet_demo_bacnet.py` — end-to-end demo
 
 Purpose
-- Convenience script that starts a `BMSDevice` simulator, the `BACnetBMSServer`, and a `BACnetBMSClient` that reads the temperature (analogValue, instance 1) 5 times.
+- Convenience script that starts a `BMSDevice` simulator, the `BACnetBMSServer`, and a `BACnetBMSClient` that reads all 6 sensor values multiple times.
 - Intended for local single-host validation.
 
 Usage
@@ -102,6 +109,14 @@ Usage
 ```powershell
 C:/Python311/python.exe bms_bacnet_demo_bacnet.py
 ```
+
+The demo will display readings for all 6 sensors:
+- Total Electricity Energy
+- Outdoor Air Temperature
+- Outdoor Air Humidity
+- Wind Speed
+- Diffuse Solar Radiation
+- Direct Solar Radiation
 
 Tutorials
 ---------
@@ -127,8 +142,13 @@ C:/Python311/python.exe bms_bacnet_demo_bacnet.py
 3. Observe output like:
 
 ```
-Read temperature (analogValue,1): 22.14
-Read temperature (analogValue,1): 22.01
+--- Reading 1 ---
+  Total Electricity Energy (analogValue,1): 0.03
+  Outdoor Air Temperature (analogValue,2): 20.5
+  Outdoor Air Humidity (analogValue,3): 50.2
+  Wind Speed (analogValue,4): 2.1
+  Diffuse Solar Radiation (analogValue,5): 152.3
+  Direct Solar Radiation (analogValue,6): 405.7
 ...
 ```
 
@@ -164,8 +184,12 @@ from bms_bacnet_client_bacnet import BACnetBMSClient
 
 client = BACnetBMSClient(local_device_id=999, local_address='0.0.0.0/47809')
 client.start()
-val = client.read_analog('192.168.1.10/47808', 'analogValue', 1)
-print('Remote temperature:', val)
+# Read Total Electricity Energy
+energy = client.read_analog('192.168.1.10/47808', 'analogValue', 1)
+print('Remote Total Electricity Energy:', energy, 'kWh')
+# Read Outdoor Temperature
+temp = client.read_analog('192.168.1.10/47808', 'analogValue', 2)
+print('Remote Outdoor Temperature:', temp, '°C')
 client.stop()
 ```
 
