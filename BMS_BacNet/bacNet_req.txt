@@ -1,17 +1,17 @@
-# BACnet Implementation Requirements
-# Python 3.11 recommended (3.12+ may have compatibility issues with bacpypes)
-
-# Core BACnet library
-bacpypes>=0.18.0
-
-# Optional: Database support
-# For SQLite (included in Python standard library, no install needed)
-# For PostgreSQL support, uncomment:
-# psycopg2-binary>=2.9.0
-
-# PDF generation (for generating documentation)
-reportlab>=4.0.0
-
-# Optional: For better markdown to PDF conversion
-# Requires pandoc to be installed separately: https://pandoc.org/installing.html
-# No pip package needed for pandoc itself
+bacpypes
+reportlab
+logging
+time
+threading
+datetime
+sqlite3
+bacpypes
+psycopg2
+struct
+threading
+time
+logging
+traceback
+random
+requests
+#psycopg2-binary
