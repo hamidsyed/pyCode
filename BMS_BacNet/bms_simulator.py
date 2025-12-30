@@ -8,6 +8,7 @@ import random
 import threading
 from typing import Dict
 import logging
+from weatherClass import weatherClass
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -25,7 +26,13 @@ class BMSDevice:
     5. Diffuse Solar Radiation (W/m²)
     6. Direct Solar Radiation (W/m²)
     """
-    
+
+    # Delhi's coordinates
+    delhi_lat = 28.61
+    delhi_lon = 77.23
+    weather_provider = weatherClass(latitude=delhi_lat, longitude=delhi_lon)
+
+    # Get the current weather data
     def __init__(self, device_id: str = "BMS-001", location: str = "Building A"):
         """
         Initialize BMS Device
@@ -104,6 +111,20 @@ class BMSDevice:
     
     def _update_sensors(self):
         """Update sensor values with realistic variations"""
+    
+    
+        # Create an instance of weatherClass
+        weather_data = BMSDevice.weather_provider.get_current_weather()
+        """""
+        print(f"Weather in Delhi (Lat: {weather_data['latitude']}, Lon: {weather_data['longitude']}) for {weather_data['current_time']}:")
+        print(f"Temperature: {weather_data['temperature']}°C")
+        print(f"Relative Humidity: {weather_data['relative_humidity']}%")
+        print(f"Wind Speed: {weather_data['wind_speed']} m/s")
+        print(f"Diffuse Solar Radiation: {weather_data['diffuse_radiation']} W/m²")
+        print(f"Direct Solar Radiation: {weather_data['direct_radiation']} W/m²")
+        print(f"Weather Code: {weather_data['weather_code']}")
+        print("\nNote: 'Total Electricity Energy (kWh)' is not available via Open-Meteo API.")
+        """
         with self.data_lock:
             # Electricity Energy: cumulative, always increasing (simulates consumption)
             # Increment by 0.01-0.05 kWh per update (realistic for building consumption)
@@ -112,31 +133,36 @@ class BMSDevice:
                 self.sensor_data['electricity_energy'] + energy_increment)
             
             # Outdoor Temperature: gradual changes simulating daily patterns
-            temp_change = random.gauss(0, 0.5)
-            self.sensor_data['outdoor_temp'] = max(5, min(44, 
-                self.sensor_data['outdoor_temp'] + temp_change))
+            #temp_change = random.gauss(0, 0.5)
+            #self.sensor_data['outdoor_temp'] = max(5, min(44, self.sensor_data['outdoor_temp'] + temp_change))
+            self.sensor_data['outdoor_temp'] = weather_data['temperature']
             
             # Outdoor Humidity: inverse correlation with temperature + random variation
-            humidity_change = random.gauss(-0.3, 1.0)
-            self.sensor_data['outdoor_humidity'] = max(11, min(100,
-                self.sensor_data['outdoor_humidity'] + humidity_change))
+            #humidity_change = random.gauss(-0.3, 1.0)
+            #self.sensor_data['outdoor_humidity'] = max(11, min(100,
+            #    self.sensor_data['outdoor_humidity'] + humidity_change))
+            self.sensor_data['outdoor_humidity'] = weather_data['relative_humidity']
             
             # Wind Speed: random gusts and calm periods
-            wind_change = random.gauss(0, 0.3)
-            self.sensor_data['wind_speed'] = max(0, min(9.3,
-                self.sensor_data['wind_speed'] + wind_change))
-            
+            #wind_change = random.gauss(0, 0.3)
+            #self.sensor_data['wind_speed'] = max(0, min(9.3,
+            #    self.sensor_data['wind_speed'] + wind_change))
+            self.sensor_data['wind_speed'] = weather_data['wind_speed']
+
             # Diffuse Solar Radiation: varies with time and weather conditions
             # Simulates cloud cover and atmospheric scattering
-            diffuse_change = random.gauss(0, 10)
-            self.sensor_data['diffuse_solar'] = max(0, min(444,
-                self.sensor_data['diffuse_solar'] + diffuse_change))
+            #diffuse_change = random.gauss(0, 10)
+            #self.sensor_data['diffuse_solar'] = max(0, min(444,
+            #    self.sensor_data['diffuse_solar'] + diffuse_change))
+            self.sensor_data['diffuse_solar'] = weather_data['diffuse_radiation']
             
             # Direct Solar Radiation: varies with sun position and weather
             # Higher values during clear sky conditions
-            direct_change = random.gauss(0, 20)
-            self.sensor_data['direct_solar'] = max(0, min(924,
-                self.sensor_data['direct_solar'] + direct_change))
+            #direct_change = random.gauss(0, 20)
+            #self.sensor_data['direct_solar'] = max(0, min(924,
+            #    self.sensor_data['direct_solar'] + direct_change))
+            self.sensor_data['direct_solar'] = weather_data['direct_radiation']
+
             
             # Print current sensor data to stdout with timestamp
             timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
@@ -227,14 +253,14 @@ if __name__ == "__main__":
     bms = BMSDevice(device_id="BMS-OFFICE-01", location="Office Building - Floor 3")
     
     # Start simulation
-    bms.start_simulation(update_interval=1.0)
+    bms.start_simulation(update_interval=5.0)
     
     # Display sensor readings for 10 seconds
     try:
         #for i in range(10):
         i = 0
         while True:
-            time.sleep(1)
+            time.sleep(5)
             data = bms.get_sensor_data()
             print(f"\n--- Sensor Reading {i+1} ---")
             for sensor, value in data.items():
