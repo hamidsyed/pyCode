@@ -15,7 +15,7 @@ Usage:
 
     device = BMSDevice("BACNET-DEV1", "Floor 1")
     device.start_simulation()
-    server = BACnetBMSServer(device, address='127.0.0.1:47808', device_id=12345)
+    server = BACnetBMSServer(device, address='0.0.0.0:47808', device_id=12345)
     server.start()
 
     # Keep running, or run client examples to read values
@@ -65,7 +65,7 @@ class BACnetBMSServer:
     exception will be raised.
     """
 
-    def __init__(self, device, address="127.0.0.1:47808", device_id=12345):
+    def __init__(self, device, address="0.0.0.0:47808", device_id=12345):
         if not BACPYPES_AVAILABLE:
             raise ImportError(
                 "bacpypes is required for BACnet implementation. "
@@ -89,8 +89,8 @@ class BACnetBMSServer:
 
         # allow overriding address by constructor parameter; if address left
         # as the default and config provided a port, update the address
-        if address == "127.0.0.1:47808" and getattr(self, 'port', None):
-            self.address = f"127.0.0.1:{self.port}"
+        if address == "0.0.0.0:47808" and getattr(self, 'port', None):
+            self.address = f"0.0.0.0:{self.port}"
         else:
             self.address = address
 
@@ -319,7 +319,7 @@ if __name__ == "__main__":
     1. A BMSDevice simulator (generates sensor data)
     2. A BACnet server that exposes the sensor data over the network
     
-    The server will run on 127.0.0.1:47808 and can be accessed by remote
+    The server will run on 0.0.0.0:47808 and can be accessed by remote
     BACnet clients (like bms_bacnet_client_bacnet.py).
     
     Press Ctrl-C to stop the server.
@@ -333,9 +333,9 @@ if __name__ == "__main__":
     print(f"[*] Device simulator started: {device.device_id} at {device.location}")
     
     # Create and start the BACnet server
-    server = BACnetBMSServer(device, address="127.0.0.1:47808", device_id=12345)
+    server = BACnetBMSServer(device, address="0.0.0.0:47808", device_id=12345)
     server.start()
-    print("[*] BACnet server started on 127.0.0.1:47808")
+    print("[*] BACnet server started on 0.0.0.0:47808")
     print("[*] Waiting for client connections (press Ctrl-C to stop)...")
     
     try:

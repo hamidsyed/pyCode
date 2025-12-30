@@ -9,6 +9,37 @@ import threading
 from typing import Dict
 import logging
 from weatherClass import weatherClass
+import csv
+from datetime import datetime
+
+class EnergyCSVReader:
+    def __init__(self, csv_path: str,
+                 time_col: str = "timestamp",
+                 energy_col: str = "energy_kwh",
+                 time_format: str = "%Y-%m-%d %H:%M:%S"):
+        self.data = []
+
+        with open(csv_path, newline='', encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                self.data.append({
+                    "time": datetime.strptime(row[time_col], time_format),
+                    "energy": float(row[energy_col])
+                })
+
+        # Ensure sorted by time
+        self.data.sort(key=lambda x: x["time"])
+
+    def get_nearest_energy(self, target_time: datetime) -> float:
+        """Return energy value nearest to given time"""
+        nearest = min(
+            self.data,
+            key=lambda x: abs((x["time"] - target_time).total_seconds())
+        )
+        return nearest["energy"]
+
+ENERGY_CSV_PATH = "baseline_clean.csv"
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -41,6 +72,11 @@ class BMSDevice:
             device_id: Unique identifier for the device
             location: Physical location of the device
         """
+        self.energy_reader = EnergyCSVReader(
+            csv_path=ENERGY_CSV_PATH,
+            time_col="timestamp",
+            energy_col="energy_kwh"
+        )
         self.device_id = device_id
         self.location = location
         self.running = False
@@ -128,9 +164,10 @@ class BMSDevice:
         with self.data_lock:
             # Electricity Energy: cumulative, always increasing (simulates consumption)
             # Increment by 0.01-0.05 kWh per update (realistic for building consumption)
-            energy_increment = random.uniform(0.01, 0.05)
-            self.sensor_data['electricity_energy'] = min(600, 
-                self.sensor_data['electricity_energy'] + energy_increment)
+            current_time = datetime.now()
+            nearest_energy = self.energy_reader.get_nearest_energy(current_time)
+            self.sensor_data['electricity_energy'] = nearest_energy
+
             
             # Outdoor Temperature: gradual changes simulating daily patterns
             #temp_change = random.gauss(0, 0.5)
